@@ -14,7 +14,7 @@ uniform float uTravellingEnergyFrequency, uTravellingEnergySpeed, uRadialBreathi
 uniform float uPreConvergenceEnergy, uConvergenceImpulse, uSettlingStrength, uFinalResidualMotion;
 uniform float uDepth, uParallax, uCoreWidth, uHaloWidth, uExposure, uBackground, uSeed;
 uniform float uSpectralSamples, uSpectralExpansionSpeed, uSpectralExpansionAcceleration, uPrimaryBandFrequency, uSecondaryBandAmount, uBandSoftness, uBandWidth;
-uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uReducedIntensity;
+uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uReducedIntensity;
 uniform float uRibbonCount, uRibbonSegments, uDiamondSpectralFadeDuration, uRibbonSourceWidth, uRibbonOuterWidth, uRibbonWidthGrowth, uRibbonLength, uRibbonGrowthDuration, uRibbonDelaySpread;
 uniform float uXDirectionSpread, uYDirectionSpread, uZDirectionSpread, uForwardRibbonProportion, uBackwardRibbonProportion, uRibbonCurvature, uSecondaryBend, uRibbonTwist, uRibbonTwistSpeed, uRibbonTranslucency, uRibbonEmission, uRibbonCentreHighlight, uRibbonEdgeHighlight, uRibbonOverlapBrightness, uRibbonDepthSoftness, uNearCameraFade, uRibbonColourVariation, uSpectrumAcrossWidth, uSpectrumAlongLength, uRibbonMotionSpeed, uResidualCentralGlow;
 
@@ -47,6 +47,7 @@ void main(){
   float diamondMotion=1.0-smoother(clamp((animationTime-diamondSettleStartTime)/max(diamondHoldStartTime-diamondSettleStartTime,0.001),0.0,1.0));
   float spectralStart=spectralStartTime;
   float elapsed=animationTime;
+  float spectralGate=step(spectralStartTime,animationTime);
   float spectralTotal=max(0.1,uSpectralEmergenceDuration+uSpectralExpansionDuration+uEcstaticHoldDuration);
   float spectralProgress=clamp((elapsed-spectralStart)/spectralTotal,0.0,1.0);
   float spectralTime=max(0.0,animationTime-spectralStartTime);
@@ -75,7 +76,8 @@ void main(){
   float depthAmount=uDepth*depthEnvelope;
   vec2 cameraDrift=vec2(sin(diamondRenderTime*0.13),cos(diamondRenderTime*0.11))*0.012*depthEnvelope*diamondMotion;
   p-=cameraDrift;
-  vec3 legacyLinear=vec3(0.0032,0.0022,0.0016)*uBackground;
+  float convergenceGate=smoother(clamp((s-0.38)/0.24,0.0,1.0));
+  vec3 legacyLinear=vec3(0.0035,0.0028,0.0020)*uBackground;
 
   for(int i=0;i<96;i++){
     float fi=float(i); if(fi>=uFilaments) break;
@@ -141,7 +143,8 @@ void main(){
     vec3 coreColor=mix(gold,vec3(1.0,0.96,0.68),smoothstep(0.7,1.0,morph));
     legacyLinear+=gold*halo*0.15*energy*intensity+coreColor*core*0.95*energy*intensity;
   }
-  legacyLinear+=vec3(0.035,0.012,0.002)*activeEnergy*exp(-length(p)*1.6)*uPreConvergenceEnergy;
+  legacyLinear+=vec3(0.035,0.012,0.002)*activeEnergy*exp(-length(p)*1.6)*uPreConvergenceEnergy*convergenceGate;
+  legacyLinear+=vec3(0.0012)*uNeutralAmbientStrength*convergenceGate;
   float diamondFade=smoother(clamp((spectralTime)/max(uDiamondSpectralFadeDuration,0.001),0.0,1.0));
   float diamondVisibility=1.0-diamondFade;
   vec3 linear=legacyLinear*diamondVisibility;
@@ -152,7 +155,7 @@ void main(){
   float coverage=geometryArrival;
   vec2 spectralP=p+uCameraDrift*reducedMix*vec2(sin(spectralTime*0.12),cos(spectralTime*0.10));
   float expansionRadius=0.15+1.45*uSpectralExpansionSpeed*expansion+0.55*uSpectralExpansionAcceleration*expansion*expansion;
-  float spectralVisibility=mix(0.72,1.0,saturationArrival);
+  float spectralVisibility=mix(0.72,1.0,saturationArrival)*spectralGate;
   float bandMotion=spectralTime*(0.22+0.32*reducedMix)+pulse*uEcstaticPulseStrength*0.18;
   float sampleCount=max(uSpectralSamples,1.0);
   float transmittance=1.0;
@@ -189,14 +192,14 @@ void main(){
     vec3 redMagenta=mix(vec3(0.95,0.01,0.08),vec3(0.7,0.01,1.0),0.5+0.5*sin(phaseR*0.10));
     float familyWeight=max(broadH+broadV+broadD+broadR,0.001);
     vec3 vividFamily=(violetBlue*broadH+cyanGreen*broadV+yellowOrange*broadD+redMagenta*broadR)/familyWeight;
-    spectral=mix(spectral,vividFamily,0.72);
+    spectral=mix(spectral,vividFamily,clamp(0.72*uDominantLayerColourPreservation,0.0,1.0));
     float hueT=clamp((390.0+310.0*fract(0.34+0.10*phaseD/PI+z*0.08)-390.0)/310.0,0.0,1.0);
     float violetWeight=1.0-smoothstep(0.08,0.22,hueT);
     float blueWeight=smoothstep(0.10,0.24,hueT)*(1.0-smoothstep(0.34,0.48,hueT));
     float redWeight=smoothstep(0.78,0.94,hueT);
     spectral*=1.0+violetWeight*uVioletLuminanceBoost+blueWeight*uBlueLuminanceBoost+redWeight*uRedLuminanceBoost;
     float luma=dot(spectral,vec3(0.2126,0.7152,0.0722));
-    float effectiveSaturation=mix(uSpectralSaturation,uSpectralSaturation*0.72,uReducedIntensity);
+    float effectiveSaturation=mix(uSpectralSaturation,uSpectralSaturation*0.72,uReducedIntensity)*(1.0+0.14*uDepthChromaPreservation*abs(z));
     spectral=mix(vec3(luma),spectral,effectiveSaturation);
     spectral=max(spectral,vec3(0.0));
     float whiteNear=exp(-length(q.xy)*3.8)*(1.0-saturationArrival)*uCentralWhiteStrength;
@@ -206,7 +209,7 @@ void main(){
     spectral=mix(spectral,vec3(1.0),whiteNear*0.45+whitening);
     float surfaceLight=0.7+0.3*sin(phaseH*0.5+phaseD*0.32+z*1.7);
     float ridge=max(max(waveH,waveV),max(waveD,waveR));
-    float bandHighlight=smoothstep(0.62,0.96,ridge)*uBandCentreChromaticHighlight;
+    float bandHighlight=smoothstep(0.62,0.96,ridge)*uBandCentreChromaticHighlight*uChromaticBloomStrength;
     float alpha=clamp(density*(0.75+0.35*surfaceLight),0.0,0.08);
     float initialBrightness=mix(uInitialSpectralBrightness,1.0,geometryArrival);
     spectralLinear+=transmittance*spectral*alpha*uSpectralEmissionIntensity*initialBrightness*(1.0+0.42*surfaceLight+0.25*fullField+bandHighlight);
@@ -222,10 +225,16 @@ void main(){
   finalColour=mix(finalColour,wavelengthToLinearRGB(390.0+310.0*fract(0.58+finalD*0.86)),0.22);
   spectralLinear+=finalColour*(0.06+0.32*fullField)*fullField*reducedMix*uSpectralEmissionIntensity*uDistantChromaticFill;
   float sourceGlow=exp(-length(spectralP)*7.0)*uResidualCentralGlow*emergence*(1.0-diamondFade);
-  spectralLinear+=vec3(1.0,0.58,0.16)*sourceGlow;
+  spectralLinear+=vec3(1.0,0.58,0.16)*sourceGlow*spectralGate;
   spectralLinear+=finalColour*uChromaticAmbientStrength*(0.024+0.055*fullField)*fullField*reducedMix;
   float aggregateLuma=dot(spectralLinear,vec3(0.2126,0.7152,0.0722));
-  spectralLinear=mix(vec3(aggregateLuma),max(spectralLinear,vec3(0.0)),mix(1.5,1.12,uReducedIntensity));
+  spectralLinear=max(spectralLinear,vec3(0.0));
+  float aggregateChroma=max(max(spectralLinear.r,spectralLinear.g),spectralLinear.b)-min(min(spectralLinear.r,spectralLinear.g),spectralLinear.b);
+  float adaptiveVibrance=uSpectralVibrance*(1.0-smoothstep(0.04,0.65,aggregateChroma));
+  spectralLinear=mix(vec3(aggregateLuma),spectralLinear,mix(2.2+adaptiveVibrance,1.35+adaptiveVibrance*0.6,uReducedIntensity));
+  spectralLinear=max(spectralLinear,vec3(0.0));
+  if(animationTime<spectralStartTime) spectralLinear=vec3(0.0);
+  spectralLinear*=spectralGate;
   linear+=spectralLinear*uSpectralExposure*mix(1.0,0.72,uReducedIntensity);
   vec3 mapped=linear*max(uExposure,0.01)/(1.0+linear*max(uExposure,0.01)*0.72);
   mapped=pow(max(mapped,0.0),vec3(0.92));
