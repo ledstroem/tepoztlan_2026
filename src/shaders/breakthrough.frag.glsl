@@ -14,7 +14,7 @@ uniform float uTravellingEnergyFrequency, uTravellingEnergySpeed, uRadialBreathi
 uniform float uPreConvergenceEnergy, uConvergenceImpulse, uSettlingStrength, uFinalResidualMotion;
 uniform float uDepth, uParallax, uCoreWidth, uHaloWidth, uExposure, uBackground, uSeed;
 uniform float uSpectralSamples, uSpectralExpansionSpeed, uSpectralExpansionAcceleration, uPrimaryBandFrequency, uSecondaryBandAmount, uBandSoftness, uBandWidth;
-uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uReducedIntensity;
+uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uOpeningColourSaturation, uOpeningWarmth, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uReducedIntensity;
 uniform float uRibbonCount, uRibbonSegments, uDiamondSpectralFadeDuration, uRibbonSourceWidth, uRibbonOuterWidth, uRibbonWidthGrowth, uRibbonLength, uRibbonGrowthDuration, uRibbonDelaySpread;
 uniform float uXDirectionSpread, uYDirectionSpread, uZDirectionSpread, uForwardRibbonProportion, uBackwardRibbonProportion, uRibbonCurvature, uSecondaryBend, uRibbonTwist, uRibbonTwistSpeed, uRibbonTranslucency, uRibbonEmission, uRibbonCentreHighlight, uRibbonEdgeHighlight, uRibbonOverlapBrightness, uRibbonDepthSoftness, uNearCameraFade, uRibbonColourVariation, uSpectrumAcrossWidth, uSpectrumAlongLength, uRibbonMotionSpeed, uResidualCentralGlow;
 
@@ -146,9 +146,11 @@ void main(){
     float brightnessWave=0.72+uBrightnessLandmarkStrength*0.35*landmark+0.2*travelling;
     float intensity=(0.42+0.7*(1.0-n)*depthScale)*brightnessWave*edgeFade*filamentActivation;
     float energy=0.7+uPreConvergenceEnergy*activeEnergy+0.72*morph;
-    vec3 bronze=mix(vec3(0.19,0.055,0.018),vec3(0.9,0.27,0.035),0.25+0.48*activeEnergy+0.18*morph);
-    vec3 gold=mix(bronze,vec3(1.0,0.62,0.12),activeEnergy*0.8+morph*0.35);
-    vec3 coreColor=mix(gold,vec3(1.0,0.96,0.68),smoothstep(0.7,1.0,morph));
+    vec3 bronze=mix(vec3(0.11,0.065,0.025),vec3(0.30,0.19,0.075),0.25+0.48*activeEnergy+0.18*morph);
+    vec3 gold=mix(bronze,vec3(0.58,0.40,0.17),clamp(activeEnergy*0.65+morph*0.25,0.0,1.0)*uOpeningWarmth+activeEnergy*0.25);
+    vec3 coreColor=mix(gold,vec3(0.82,0.62,0.32),smoothstep(0.7,1.0,morph));
+    float openingLuma=dot(coreColor,vec3(0.2126,0.7152,0.0722));
+    coreColor=mix(vec3(openingLuma),coreColor,uOpeningColourSaturation);
     legacyLinear+=gold*halo*0.15*energy*intensity+coreColor*core*0.95*energy*intensity;
   }
   legacyLinear+=vec3(0.035,0.012,0.002)*activeEnergy*exp(-length(p)*1.6)*uPreConvergenceEnergy*convergenceGate;
@@ -249,9 +251,13 @@ void main(){
   if(animationTime<spectralStartTime) spectralLinear=vec3(0.0);
   spectralLinear*=rainbowVisible;
   linear+=spectralLinear*uSpectralExposure*mix(1.0,0.72,uReducedIntensity);
-  vec3 softLightLinear=mix(vec3(1.0),vec3(1.0,0.965,0.90),clamp(uSoftLightWarmth,0.0,1.0));
+  float finalGoldMix=clamp(uSoftLightWarmth+0.15,0.0,1.0);
+  vec3 finalSoftLight=mix(vec3(1.0),vec3(1.0,0.90,0.68),finalGoldMix);
+  float finalRadius=length(p);
+  float broadGlow=exp(-finalRadius*finalRadius*0.18);
+  float finalField=mix(0.90,1.0,broadGlow);
   float pearlescent=1.0+(1.0-uSoftLightUniformity)*0.012*sin(p.x*1.7+p.y*0.8);
-  softLightLinear*=pearlescent*(uSoftLightBrightness+uPearlescentResidualAmount*0.05);
+  vec3 softLightLinear=finalSoftLight*finalField*pearlescent*(uSoftLightBrightness+uPearlescentResidualAmount*0.05);
   if(animationTime<softLightTransitionStartTime) softLightLinear=vec3(0.0);
   linear+=softLightLinear*finalLightVisibility;
   float toneExposure=max(uExposure,0.01);
