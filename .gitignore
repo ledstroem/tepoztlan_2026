@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+*.tsbuildinfo
+*.webm
+*.mp4
+check-*.png
+ribbon-*.png
+runtime-*.png
+spectral-*.png
+verify-*.png
