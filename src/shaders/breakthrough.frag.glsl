@@ -16,6 +16,7 @@ uniform float uDepth, uParallax, uCoreWidth, uHaloWidth, uExposure, uBackground,
 uniform float uSpectralSamples, uSpectralExpansionSpeed, uSpectralExpansionAcceleration, uPrimaryBandFrequency, uSecondaryBandAmount, uBandSoftness, uBandWidth;
 uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uDepthEffectStrength, uDepthIntroductionPoint, uFilamentBaseDepthSpread, uDepthPathAmplitude, uPlaneTilt, uPlaneTiltVariation, uDepthPerspectiveStrength, uNearWidthScale, uFarWidthScale, uNearBrightnessScale, uFarBrightnessScale, uDepthParallax, uDepthAtmosphericAttenuation, uConvergenceDepthCollapse, uOpeningColourSaturation, uOpeningWarmth, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uFinalBackgroundDarkness, uSoftLightOpacity, uFinalLayerSpread, uFinalSpatialVariation, uDarkGapStrength, uStaticWarpAmount, uFinalEdgeLight, uReducedIntensity;
 uniform float uRibbonCount, uRibbonSegments, uDiamondSpectralFadeDuration, uRibbonSourceWidth, uRibbonOuterWidth, uRibbonWidthGrowth, uRibbonLength, uRibbonGrowthDuration, uRibbonDelaySpread;
+uniform float uInitialFilamentEmission, uPeakFilamentEmission, uBrightnessRiseStart, uBrightnessRiseDuration, uBrightnessExponent, uNearDepthBrightness, uLocalHaloStrength, uEnableFilamentRelease, uReleaseStart, uReleaseGrowthDuration, uReleasedStrandProportion, uMaximumReleaseAmount, uReleaseDelaySpread, uReleaseSoftness, uHorizontalSpread, uVerticalSpread, uTangentialAdvection, uReleasedTrajectoryCurvature, uHalfFieldContainment, uPreConvergenceCentreGap, uReleasedZDepthAmount, uReleasedStrandBrightnessBoost, uReleaseCollapseTiming;
 uniform float uXDirectionSpread, uYDirectionSpread, uZDirectionSpread, uForwardRibbonProportion, uBackwardRibbonProportion, uRibbonCurvature, uSecondaryBend, uRibbonTwist, uRibbonTwistSpeed, uRibbonTranslucency, uRibbonEmission, uRibbonCentreHighlight, uRibbonEdgeHighlight, uRibbonOverlapBrightness, uRibbonDepthSoftness, uNearCameraFade, uRibbonColourVariation, uSpectrumAcrossWidth, uSpectrumAlongLength, uRibbonMotionSpeed, uResidualCentralGlow;
 
 const float PI=3.14159265359;
@@ -76,6 +77,10 @@ void main(){
   float collapse=ramp(0.72,0.94,s);
   float depthBuild=smoother(clamp((s-uDepthIntroductionPoint)/0.55,0.0,1.0));
   float remainingDepth=1.0-uConvergenceDepthCollapse*smoother(clamp((s-0.72)/0.24,0.0,1.0));
+  float intensityBuild=smoother(clamp((s-uBrightnessRiseStart)/max(uBrightnessRiseDuration,0.05),0.0,1.0));
+  float filamentEmission=mix(uInitialFilamentEmission,uPeakFilamentEmission,pow(intensityBuild,max(uBrightnessExponent,0.1)));
+  float releaseBuild=smoother(clamp((s-uReleaseStart)/max(uReleaseGrowthDuration,0.05),0.0,1.0));
+  float releaseCollapse=1.0-smoother(clamp((morph-uReleaseCollapseTiming)/max(1.0-uReleaseCollapseTiming,0.05),0.0,1.0));
   float impulse=sin(PI*morph)*sin(PI*morph)*uConvergenceImpulse;
   float rotationBuild=ramp(uRotationBuildStart,uRotationBuildEnd,s);
   float accelerationStart=uRotationBuildStart*uDiamondCompleteTime;
@@ -122,9 +127,26 @@ void main(){
     float theta=atan(q.y,q.x-side*uC);
     float seed1=rnd*6.2831, seed2=rnd2*5.71;
     float localTheta=theta-synchronizedPhase;
+    float releaseAmount=smoothstep(1.0-uReleasedStrandProportion,1.0,rnd2)*uMaximumReleaseAmount;
+    float strandRelease=smoother(clamp((s-(uReleaseStart+uReleaseDelaySpread*rnd))/(max(uReleaseSoftness,0.02)),0.0,1.0));
+    float effectiveRelease=uEnableFilamentRelease*releaseBuild*releaseCollapse*strandRelease*releaseAmount;
+    float spreadEnvelope=0.55+0.45*sin(localTheta+seed1);
+    float releaseX=side*uHorizontalSpread*effectiveRelease*(0.55+0.45*spreadEnvelope);
+    float releaseY=uVerticalSpread*effectiveRelease*(0.62*sin((1.0+0.45*rnd)*localTheta+seed2)+0.24*sin(2.0*localTheta+seed1*1.3));
+    vec2 tangent=normalize(vec2(-q.y,q.x));
+    float advectionEnvelope=0.5+0.5*sin(localTheta+seed2);
+    vec2 releasedCurve=vec2(
+      uReleasedTrajectoryCurvature*effectiveRelease*sin(localTheta*0.8+seed1),
+      uReleasedTrajectoryCurvature*effectiveRelease*0.55*cos(localTheta*0.7+seed2)
+    );
+    releaseX+=tangent.x*uTangentialAdvection*effectiveRelease*(advectionEnvelope-0.35);
+    releaseY+=tangent.y*uTangentialAdvection*effectiveRelease*(advectionEnvelope-0.35);
+    releaseX+=releasedCurve.x;
+    releaseY+=releasedCurve.y;
     float stableDepth=mix(-uFilamentBaseDepthSpread,uFilamentBaseDepthSpread,rnd)*depthBuild*remainingDepth;
     float depthPath=uDepthPathAmplitude*depthBuild*remainingDepth*(sin(localTheta+seed1)+0.45*sin(2.0*localTheta+seed2));
-    float strandZ=uDepthEffectStrength*(stableDepth+depthPath);
+    float releasedDepth=uReleasedZDepthAmount*effectiveRelease*sin(localTheta+seed2);
+    float strandZ=uDepthEffectStrength*(stableDepth+depthPath+releasedDepth);
     float tiltX=depthBuild*remainingDepth*(uPlaneTilt+uPlaneTiltVariation*(rnd-0.5));
     float tiltY=depthBuild*remainingDepth*(uPlaneTilt*0.72+uPlaneTiltVariation*(rnd2-0.5));
     float perspective=1.0/max(1.0-uDepthPerspectiveStrength*strandZ,0.72);
@@ -145,9 +167,10 @@ void main(){
     float expandedSpread=uStartSpread*(1.0+0.45*activeEnergy);
     float currentSpread=mix(expandedSpread,uEndSpread,pow(collapse,1.8));
     float offset=((n-0.5)*currentSpread*bunching+breathing)*(1.0-0.35*morph);
+    float pathY=q.y-releaseY;
     float radialLandmark=uLargeBulgeStrength*warp*(0.7+0.5*rnd)*harmonic;
     radialLandmark+=uPinchStrength*warp*0.45*sin(3.0*localTheta+seed2);
-    float ay=abs(q.y), rr=uR+offset+uR*radialLandmark;
+    float ay=abs(pathY), rr=uR+offset+uR*radialLandmark;
     float root=sqrt(max(rr*rr-ay*ay,0.00001));
     float xCircle=uC-root+offset*0.24;
     float peakE=max(0.018,uEpsilon+offset*0.22);
@@ -160,7 +183,11 @@ void main(){
     float bend=(coupling*0.018*quadrupole*side*(0.4+0.6*rnd)
       +impulse*0.07*quadrupole*side*(0.6+0.4*travelling))*diamondMotion;
     float inwardLean=coupling*0.018*sin(localTheta*2.0)*side*diamondMotion;
-    float lineX=side*xCurve+bend+inwardLean+offset*0.12*sin(localTheta+q.y*3.0);
+    float lineX=side*xCurve+releaseX+bend+inwardLean+offset*0.12*sin(localTheta+q.y*3.0);
+    float signedLine=side*lineX;
+    float containmentSoftness=max(0.08,uPreConvergenceCentreGap*1.4);
+    float containedSigned=uPreConvergenceCentreGap+log(1.0+exp(clamp((signedLine-uPreConvergenceCentreGap)/containmentSoftness,-8.0,8.0)))*containmentSoftness;
+    lineX=side*mix(signedLine,containedSigned,uHalfFieldContainment*effectiveRelease*(1.0-coupling));
     float depth01=clamp(0.5+0.5*strandZ/max(uFilamentBaseDepthSpread+uDepthPathAmplitude,0.001),0.0,1.0);
     float depthWidth=mix(uFarWidthScale,uNearWidthScale,depth01);
     float depthBrightness=mix(uFarBrightnessScale,uNearBrightnessScale,depth01);
@@ -173,14 +200,18 @@ void main(){
     float reciprocalDomain=mix(1.0,1.0-smoothstep(uA-0.035,uA+0.035,ay),morph);
     float edgeFade=(smoothstep(1.15,0.96,ay)+smoothstep(0.02,0.16,ay)*0.16)*reciprocalDomain;
     float brightnessWave=0.72+uBrightnessLandmarkStrength*0.35*landmark+0.2*travelling;
-    float intensity=(0.42+0.7*(1.0-n)*depthScale)*brightnessWave*edgeFade*filamentActivation*depthBrightness*depthAtmosphere;
+    float releaseBrightness=1.0+effectiveRelease*uReleasedStrandBrightnessBoost*(0.65+0.35*depth01);
+    depthBrightness*=mix(1.0,mix(1.0,uNearDepthBrightness,depth01),1.0-morph);
+    float energeticEmission=mix(filamentEmission,1.0,morph);
+    float halfFieldGate=mix(1.0,smoothstep(uPreConvergenceCentreGap,uPreConvergenceCentreGap+0.14,side*p.x),1.0-coupling);
+    float intensity=(0.42+0.7*(1.0-n)*depthScale)*brightnessWave*edgeFade*filamentActivation*depthBrightness*depthAtmosphere*energeticEmission*releaseBrightness*halfFieldGate;
     float energy=0.7+uPreConvergenceEnergy*activeEnergy+0.72*morph;
     vec3 bronze=mix(vec3(0.11,0.065,0.025),vec3(0.30,0.19,0.075),0.25+0.48*activeEnergy+0.18*morph);
     vec3 gold=mix(bronze,vec3(0.58,0.40,0.17),clamp(activeEnergy*0.65+morph*0.25,0.0,1.0)*uOpeningWarmth+activeEnergy*0.25);
     vec3 coreColor=mix(gold,vec3(0.82,0.62,0.32),smoothstep(0.7,1.0,morph));
     float openingLuma=dot(coreColor,vec3(0.2126,0.7152,0.0722));
     coreColor=mix(vec3(openingLuma),coreColor,uOpeningColourSaturation);
-    legacyLinear+=gold*halo*0.15*energy*intensity+coreColor*core*0.95*energy*intensity;
+    legacyLinear+=gold*halo*0.15*mix(1.0,uLocalHaloStrength,1.0-morph)*energy*intensity+coreColor*core*0.95*energy*intensity;
   }
   legacyLinear+=vec3(0.035,0.012,0.002)*activeEnergy*exp(-length(p)*1.6)*uPreConvergenceEnergy*convergenceGate;
   legacyLinear+=vec3(0.0012)*uNeutralAmbientStrength*convergenceGate;
