@@ -16,6 +16,7 @@ uniform float uDepth, uParallax, uCoreWidth, uHaloWidth, uExposure, uBackground,
 uniform float uSpectralSamples, uSpectralExpansionSpeed, uSpectralExpansionAcceleration, uPrimaryBandFrequency, uSecondaryBandAmount, uBandSoftness, uBandWidth;
 uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uDepthEffectStrength, uDepthIntroductionPoint, uFilamentBaseDepthSpread, uDepthPathAmplitude, uPlaneTilt, uPlaneTiltVariation, uDepthPerspectiveStrength, uNearWidthScale, uFarWidthScale, uNearBrightnessScale, uFarBrightnessScale, uDepthParallax, uDepthAtmosphericAttenuation, uConvergenceDepthCollapse, uOpeningColourSaturation, uOpeningWarmth, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uFinalBackgroundDarkness, uSoftLightOpacity, uFinalLayerSpread, uFinalSpatialVariation, uDarkGapStrength, uStaticWarpAmount, uFinalEdgeLight, uReducedIntensity;
 uniform float uRibbonCount, uRibbonSegments, uDiamondSpectralFadeDuration, uRibbonSourceWidth, uRibbonOuterWidth, uRibbonWidthGrowth, uRibbonLength, uRibbonGrowthDuration, uRibbonDelaySpread;
+uniform float uTrue3DStrands;
 uniform float uXDirectionSpread, uYDirectionSpread, uZDirectionSpread, uForwardRibbonProportion, uBackwardRibbonProportion, uRibbonCurvature, uSecondaryBend, uRibbonTwist, uRibbonTwistSpeed, uRibbonTranslucency, uRibbonEmission, uRibbonCentreHighlight, uRibbonEdgeHighlight, uRibbonOverlapBrightness, uRibbonDepthSoftness, uNearCameraFade, uRibbonColourVariation, uSpectrumAcrossWidth, uSpectrumAlongLength, uRibbonMotionSpeed, uResidualCentralGlow;
 
 const float PI=3.14159265359;
@@ -111,6 +112,7 @@ void main(){
     float activationThreshold=hash(fi*1.73+uSeed*0.37);
     float filamentActivation=smoothstep(activationThreshold-uRevealSoftness,activationThreshold+uRevealSoftness,activeFraction);
     if(filamentActivation<0.001) continue;
+    if(uTrue3DStrands>0.5 && s<uMorphStart) continue;
 
     float direction=side<0.0?1.0:mix(1.0,-1.0,uCounterRotation);
     float systemRate=side<0.0?1.0:uSpeedRatio;
