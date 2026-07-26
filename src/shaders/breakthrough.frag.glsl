@@ -14,7 +14,7 @@ uniform float uTravellingEnergyFrequency, uTravellingEnergySpeed, uRadialBreathi
 uniform float uPreConvergenceEnergy, uConvergenceImpulse, uSettlingStrength, uFinalResidualMotion;
 uniform float uDepth, uParallax, uCoreWidth, uHaloWidth, uExposure, uBackground, uSeed;
 uniform float uSpectralSamples, uSpectralExpansionSpeed, uSpectralExpansionAcceleration, uPrimaryBandFrequency, uSecondaryBandAmount, uBandSoftness, uBandWidth;
-uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uOpeningColourSaturation, uOpeningWarmth, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uFinalBackgroundDarkness, uSoftLightOpacity, uFinalLayerSpread, uFinalSpatialVariation, uDarkGapStrength, uStaticWarpAmount, uFinalEdgeLight, uReducedIntensity;
+uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uDepthEffectStrength, uDepthIntroductionPoint, uFilamentBaseDepthSpread, uDepthPathAmplitude, uPlaneTilt, uPlaneTiltVariation, uDepthPerspectiveStrength, uNearWidthScale, uFarWidthScale, uNearBrightnessScale, uFarBrightnessScale, uDepthParallax, uDepthAtmosphericAttenuation, uConvergenceDepthCollapse, uOpeningColourSaturation, uOpeningWarmth, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uFinalBackgroundDarkness, uSoftLightOpacity, uFinalLayerSpread, uFinalSpatialVariation, uDarkGapStrength, uStaticWarpAmount, uFinalEdgeLight, uReducedIntensity;
 uniform float uRibbonCount, uRibbonSegments, uDiamondSpectralFadeDuration, uRibbonSourceWidth, uRibbonOuterWidth, uRibbonWidthGrowth, uRibbonLength, uRibbonGrowthDuration, uRibbonDelaySpread;
 uniform float uXDirectionSpread, uYDirectionSpread, uZDirectionSpread, uForwardRibbonProportion, uBackwardRibbonProportion, uRibbonCurvature, uSecondaryBend, uRibbonTwist, uRibbonTwistSpeed, uRibbonTranslucency, uRibbonEmission, uRibbonCentreHighlight, uRibbonEdgeHighlight, uRibbonOverlapBrightness, uRibbonDepthSoftness, uNearCameraFade, uRibbonColourVariation, uSpectrumAcrossWidth, uSpectrumAlongLength, uRibbonMotionSpeed, uResidualCentralGlow;
 
@@ -74,6 +74,8 @@ void main(){
   float coupling=ramp(uCouplingStart,0.85,s);
   float morph=ramp(uMorphStart,uMorphEnd,s);
   float collapse=ramp(0.72,0.94,s);
+  float depthBuild=smoother(clamp((s-uDepthIntroductionPoint)/0.55,0.0,1.0));
+  float remainingDepth=1.0-uConvergenceDepthCollapse*smoother(clamp((s-0.72)/0.24,0.0,1.0));
   float impulse=sin(PI*morph)*sin(PI*morph)*uConvergenceImpulse;
   float rotationBuild=ramp(uRotationBuildStart,uRotationBuildEnd,s);
   float accelerationStart=uRotationBuildStart*uDiamondCompleteTime;
@@ -120,6 +122,17 @@ void main(){
     float theta=atan(q.y,q.x-side*uC);
     float seed1=rnd*6.2831, seed2=rnd2*5.71;
     float localTheta=theta-synchronizedPhase;
+    float stableDepth=mix(-uFilamentBaseDepthSpread,uFilamentBaseDepthSpread,rnd)*depthBuild*remainingDepth;
+    float depthPath=uDepthPathAmplitude*depthBuild*remainingDepth*(sin(localTheta+seed1)+0.45*sin(2.0*localTheta+seed2));
+    float strandZ=uDepthEffectStrength*(stableDepth+depthPath);
+    float tiltX=depthBuild*remainingDepth*(uPlaneTilt+uPlaneTiltVariation*(rnd-0.5));
+    float tiltY=depthBuild*remainingDepth*(uPlaneTilt*0.72+uPlaneTiltVariation*(rnd2-0.5));
+    float perspective=1.0/max(1.0-uDepthPerspectiveStrength*strandZ,0.72);
+    vec2 planeTiltOffset=vec2(cos(localTheta)*tiltY,sin(localTheta)*tiltX)*strandZ*0.65;
+    vec2 depthParallaxOffset=uDepthParallax*strandZ*vec2(0.35*side,-0.25);
+    q=(q+planeTiltOffset+depthParallaxOffset)*perspective;
+    theta=atan(q.y,q.x-side*uC);
+    localTheta=theta-synchronizedPhase;
     float warp=mix(uBaseImperfection,uPeakImperfection,activeEnergy)*(1.0-0.96*settle)*diamondMotion;
     float harmonic=0.42*sin(2.0*localTheta+seed1)
       +0.27*sin(3.0*localTheta+seed2)
@@ -148,15 +161,19 @@ void main(){
       +impulse*0.07*quadrupole*side*(0.6+0.4*travelling))*diamondMotion;
     float inwardLean=coupling*0.018*sin(localTheta*2.0)*side*diamondMotion;
     float lineX=side*xCurve+bend+inwardLean+offset*0.12*sin(localTheta+q.y*3.0);
+    float depth01=clamp(0.5+0.5*strandZ/max(uFilamentBaseDepthSpread+uDepthPathAmplitude,0.001),0.0,1.0);
+    float depthWidth=mix(uFarWidthScale,uNearWidthScale,depth01);
+    float depthBrightness=mix(uFarBrightnessScale,uNearBrightnessScale,depth01);
+    float depthAtmosphere=mix(1.0-uDepthAtmosphericAttenuation,1.0,depth01);
     float d=abs(q.x-lineX)/sqrt(1.0+derivative*derivative);
     float aa=max(fwidth(d),0.00035);
     float localWidth=1.0+0.25*(travelling-0.5)*activeEnergy;
-    float core=gauss(d,uCoreWidth*localWidth*(0.72+0.28/(1.0+depthAmount*0.35))+aa);
-    float halo=gauss(d,mix(uInitialHaloWidth,uHaloWidth,morph)*localWidth*(0.75+0.25/(1.0+depthAmount*0.35))+aa*2.0);
+    float core=gauss(d,uCoreWidth*localWidth*depthWidth*(0.72+0.28/(1.0+depthAmount*0.35))+aa);
+    float halo=gauss(d,mix(uInitialHaloWidth,uHaloWidth,morph)*localWidth*depthWidth*(0.75+0.25/(1.0+depthAmount*0.35))+aa*2.0);
     float reciprocalDomain=mix(1.0,1.0-smoothstep(uA-0.035,uA+0.035,ay),morph);
     float edgeFade=(smoothstep(1.15,0.96,ay)+smoothstep(0.02,0.16,ay)*0.16)*reciprocalDomain;
     float brightnessWave=0.72+uBrightnessLandmarkStrength*0.35*landmark+0.2*travelling;
-    float intensity=(0.42+0.7*(1.0-n)*depthScale)*brightnessWave*edgeFade*filamentActivation;
+    float intensity=(0.42+0.7*(1.0-n)*depthScale)*brightnessWave*edgeFade*filamentActivation*depthBrightness*depthAtmosphere;
     float energy=0.7+uPreConvergenceEnergy*activeEnergy+0.72*morph;
     vec3 bronze=mix(vec3(0.11,0.065,0.025),vec3(0.30,0.19,0.075),0.25+0.48*activeEnergy+0.18*morph);
     vec3 gold=mix(bronze,vec3(0.58,0.40,0.17),clamp(activeEnergy*0.65+morph*0.25,0.0,1.0)*uOpeningWarmth+activeEnergy*0.25);
