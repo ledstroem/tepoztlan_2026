@@ -76,8 +76,19 @@ void main(){
   float collapse=ramp(0.72,0.94,s);
   float impulse=sin(PI*morph)*sin(PI*morph)*uConvergenceImpulse;
   float rotationBuild=ramp(uRotationBuildStart,uRotationBuildEnd,s);
-  float omega=uOmega0+(uOmega1-uOmega0)*pow(rotationBuild,2.2);
-  float phase=diamondRenderTime*omega*6.2831853;
+  float accelerationStart=uRotationBuildStart*uDiamondCompleteTime;
+  float accelerationEnd=uRotationBuildEnd*uDiamondCompleteTime;
+  float accelerationDuration=max(accelerationEnd-accelerationStart,0.001);
+  float accelerationX=clamp((diamondRenderTime-accelerationStart)/accelerationDuration,0.0,1.0);
+  float accelerationIntegral;
+  if(diamondRenderTime<=accelerationStart){
+    accelerationIntegral=uOmega0*diamondRenderTime;
+  }else if(diamondRenderTime<=accelerationEnd){
+    accelerationIntegral=uOmega0*diamondRenderTime+(uOmega1-uOmega0)*accelerationDuration*pow(accelerationX,2.7)/2.7;
+  }else{
+    accelerationIntegral=uOmega0*diamondRenderTime+(uOmega1-uOmega0)*(accelerationDuration/2.7+diamondRenderTime-accelerationEnd);
+  }
+  float phase=accelerationIntegral*6.2831853;
   float settleAmount=clamp(settle*uSettlingStrength,0.0,1.0);
   float rotationVisibility=mix(1.0,max(uFinalResidualMotion,0.02),settleAmount);
   float depthEnvelope=ramp(0.18,0.68,s)*(1.0-0.42*settle);
@@ -108,20 +119,21 @@ void main(){
     vec2 q=p/depthScale+z*uParallax*vec2(sin(synchronizedPhase*0.14+fi),cos(synchronizedPhase*0.12+fi*1.7))*depthEnvelope*diamondMotion;
     float theta=atan(q.y,q.x-side*uC);
     float seed1=rnd*6.2831, seed2=rnd2*5.71;
-    float warp=(uBaseImperfection+uPeakImperfection*activeEnergy)*(1.0-0.96*settle)*diamondMotion;
-    float harmonic=0.42*sin(2.0*theta+synchronizedPhase+seed1)
-      +0.27*sin(3.0*theta-1.37*synchronizedPhase+seed2)
-      +0.19*sin(5.0*theta+0.61*synchronizedPhase+seed1*1.7)
-      +0.12*sin(8.0*theta-0.23*synchronizedPhase+seed2*1.3);
-    float travelling=0.5+0.5*sin(uTravellingEnergyFrequency*theta-uTravellingEnergySpeed*synchronizedPhase+seed1);
-    float landmark=0.5+0.5*sin((2.0+1.5*rnd)*theta-(0.65+0.4*seed2)*synchronizedPhase+seed1*1.4);
-    float bunching=1.0+uSpacingIrregularity*activeEnergy*(travelling-0.5)+0.08*sin(theta*2.0-synchronizedPhase*0.6+seed2);
-    float breathing=uRadialBreathing*activeEnergy*sin(synchronizedPhase*0.38+theta*2.0+seed2)*diamondMotion;
+    float localTheta=theta-synchronizedPhase;
+    float warp=mix(uBaseImperfection,uPeakImperfection,activeEnergy)*(1.0-0.96*settle)*diamondMotion;
+    float harmonic=0.42*sin(2.0*localTheta+seed1)
+      +0.27*sin(3.0*localTheta+seed2)
+      +0.19*sin(5.0*localTheta+seed1*1.7)
+      +0.12*sin(8.0*localTheta+seed2*1.3);
+    float travelling=0.5+0.5*sin(uTravellingEnergyFrequency*localTheta+seed1);
+    float landmark=0.5+0.5*sin((2.0+1.5*rnd)*localTheta+seed1*1.4);
+    float bunching=1.0+uSpacingIrregularity*activeEnergy*(travelling-0.5)+0.08*sin(localTheta*2.0+seed2);
+    float breathing=uRadialBreathing*activeEnergy*sin(localTheta*2.0+seed2)*diamondMotion;
     float expandedSpread=uStartSpread*(1.0+0.45*activeEnergy);
     float currentSpread=mix(expandedSpread,uEndSpread,pow(collapse,1.8));
     float offset=((n-0.5)*currentSpread*bunching+breathing)*(1.0-0.35*morph);
     float radialLandmark=uLargeBulgeStrength*warp*(0.7+0.5*rnd)*harmonic;
-    radialLandmark+=uPinchStrength*warp*0.45*sin(3.0*theta-synchronizedPhase*1.2+seed2);
+    radialLandmark+=uPinchStrength*warp*0.45*sin(3.0*localTheta+seed2);
     float ay=abs(q.y), rr=uR+offset+uR*radialLandmark;
     float root=sqrt(max(rr*rr-ay*ay,0.00001));
     float xCircle=uC-root+offset*0.24;
@@ -134,8 +146,8 @@ void main(){
     float quadrupole=(q.x*q.x-q.y*q.y)+0.45*(2.0*q.x*q.y);
     float bend=(coupling*0.018*quadrupole*side*(0.4+0.6*rnd)
       +impulse*0.07*quadrupole*side*(0.6+0.4*travelling))*diamondMotion;
-    float inwardLean=coupling*0.018*sin(theta*2.0+synchronizedPhase)*side*diamondMotion;
-    float lineX=side*xCurve+bend+inwardLean+offset*0.12*sin(synchronizedPhase+q.y*3.0);
+    float inwardLean=coupling*0.018*sin(localTheta*2.0)*side*diamondMotion;
+    float lineX=side*xCurve+bend+inwardLean+offset*0.12*sin(localTheta+q.y*3.0);
     float d=abs(q.x-lineX)/sqrt(1.0+derivative*derivative);
     float aa=max(fwidth(d),0.00035);
     float localWidth=1.0+0.25*(travelling-0.5)*activeEnergy;
@@ -253,9 +265,12 @@ void main(){
   linear+=spectralLinear*uSpectralExposure*mix(1.0,0.72,uReducedIntensity);
   float finalGoldMix=clamp(uSoftLightWarmth+0.15,0.0,1.0);
   vec3 finalSoftLight=mix(vec3(1.0),vec3(1.0,0.90,0.68),finalGoldMix);
-  float finalRadius=length(p);
-  float broadGlow=exp(-finalRadius*finalRadius*0.18);
-  float finalField=mix(0.90,1.0,broadGlow);
+  float glowRadius1=length(p-vec2(-0.12,0.06));
+  float glowRadius2=length(p-vec2(0.18,-0.10));
+  float glow1=exp(-glowRadius1*glowRadius1*0.22);
+  float glow2=exp(-glowRadius2*glowRadius2*0.16);
+  float broadHorizontal=exp(-p.y*p.y*0.28);
+  float finalField=0.82+0.06*glow1+0.05*glow2+0.04*broadHorizontal;
   float pearlescent=1.0+(1.0-uSoftLightUniformity)*0.012*sin(p.x*1.7+p.y*0.8);
   vec3 softLightLinear=finalSoftLight*finalField*pearlescent*(uSoftLightBrightness+uPearlescentResidualAmount*0.05);
   if(animationTime<softLightTransitionStartTime) softLightLinear=vec3(0.0);
