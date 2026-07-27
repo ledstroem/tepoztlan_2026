@@ -6,6 +6,12 @@ export interface Params {
   enableTrue3DStrands:boolean; depthIntroductionTime:number; maxPlaneTilt:number; planeTiltVariation3D:number; baseDepthSpread3D:number; orbitZAmplitude:number; secondaryZAmplitude:number; perspectiveStrength3D:number; nearWidthScale3D:number; farWidthScale3D:number; nearBrightnessScale3D:number; farBrightnessScale3D:number; depthAttenuation3D:number; coreOpacity3D:number; depthTestedGlowStrength:number; initialStripWidth3D:number; energeticStripWidth3D:number; initialGlowScale3D:number; energeticGlowScale3D:number; initialCoreEmission3D:number; peakCoreEmission3D:number; initialHaloEmission3D:number; peakHaloEmission3D:number; brightnessRiseStartTime3D:number; brightnessRiseDuration3D:number; brightnessExponent3D:number; openingBronzeColour3D:number; energeticBronzeGold3D:number; enableDepartures:boolean; departureEarliestTime:number; departureLatestTime:number; departureDuration:number; departingStrandProportion:number; strongDepartureProportion:number; tangentContinuationStrength:number; departureLength:number; horizontalBend:number; verticalBend:number; zBend:number; endTaper:number; sideContainment3D:number; departureCollapseTiming:number;
 }
 
+export interface Params {
+  goldTransitionStartTime3D?:number; goldTransitionDuration3D?:number;
+  middleSoftGold3D?:number; energeticChampagne3D?:number; peakSoftGold3D?:number;
+  goldSoftness3D?:number; nearDepthGoldShift3D?:number; haloGoldSoftness3D?:number;
+}
+
 export const defaults: Params = {
   enableTrue3DStrands:true,depthIntroductionTime:2,maxPlaneTilt:.38,planeTiltVariation3D:.28,baseDepthSpread3D:.18,orbitZAmplitude:.28,secondaryZAmplitude:.08,perspectiveStrength3D:.42,nearWidthScale3D:1.5,farWidthScale3D:.62,nearBrightnessScale3D:1.5,farBrightnessScale3D:.55,depthAttenuation3D:.18,coreOpacity3D:.9,depthTestedGlowStrength:.35,initialStripWidth3D:.0038,energeticStripWidth3D:.0049,initialGlowScale3D:1.7,energeticGlowScale3D:2.15,initialCoreEmission3D:.58,peakCoreEmission3D:1.42,initialHaloEmission3D:.35,peakHaloEmission3D:.72,brightnessRiseStartTime3D:.9,brightnessRiseDuration3D:8.8,brightnessExponent3D:1.4,openingBronzeColour3D:.45,energeticBronzeGold3D:.52,enableDepartures:true,departureEarliestTime:5.5,departureLatestTime:9.5,departureDuration:1.8,departingStrandProportion:.20,strongDepartureProportion:.08,tangentContinuationStrength:.5,departureLength:.58,horizontalBend:.28,verticalBend:.28,zBend:.28,endTaper:.25,sideContainment3D:.9,departureCollapseTiming:.15,
   progress:0,duration:38.7,diamondCompleteTime:18,diamondHoldDuration:4,spectralEmergenceDuration:.7,spectralExpansionDuration:2,ecstaticHoldDuration:9.3,playSpeed:1,
@@ -15,3 +21,5 @@ export const defaults: Params = {
 };
 export const qualityFilaments = { low:48, medium:72, high:96 };
 export const spectralSamples = { low:10, medium:20, high:28 };
+
+Object.assign(defaults,{goldTransitionStartTime3D:2.4,goldTransitionDuration3D:10.8,middleSoftGold3D:1,energeticChampagne3D:1,peakSoftGold3D:1,goldSoftness3D:.95,nearDepthGoldShift3D:.75,haloGoldSoftness3D:.22});

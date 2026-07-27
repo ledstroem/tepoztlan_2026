@@ -13,6 +13,7 @@ uniform float uNearWidthScale3D, uFarWidthScale3D, uNearBrightnessScale3D, uFarB
 uniform float uInitialStripWidth3D, uEnergeticStripWidth3D, uInitialGlowScale3D, uEnergeticGlowScale3D;
 uniform float uInitialCoreEmission3D, uPeakCoreEmission3D, uInitialHaloEmission3D, uPeakHaloEmission3D;
 uniform float uBrightnessRiseStartTime3D, uBrightnessRiseDuration3D, uBrightnessExponent3D;
+uniform float uGoldTransitionStartTime3D, uGoldTransitionDuration3D, uGoldSoftness3D;
 uniform float uEnableDepartures, uDepartureEarliestTime, uDepartureLatestTime, uDepartureDuration, uDepartingStrandProportion, uStrongDepartureProportion;
 uniform float uTangentContinuationStrength, uDepartureLength, uHorizontalBend, uVerticalBend, uZBend, uEndTaper, uSideContainment3D, uDepartureCollapseTiming;
 uniform float uGlow;
@@ -23,6 +24,7 @@ out float vBrightness;
 out float vBrightnessEnergy;
 out float vCoreEmission;
 out float vHaloEmission;
+out float vGoldBuild;
 out float vAlpha;
 out float vGlow;
 
@@ -60,6 +62,8 @@ void main(){
   float brightnessRaw=clamp((elapsed-uBrightnessRiseStartTime3D)/max(uBrightnessRiseDuration3D,0.001),0.0,1.0);
   float brightnessBuild=smoother(brightnessRaw);
   float brightnessEnergy=pow(brightnessBuild,max(uBrightnessExponent3D,0.1));
+  float goldRaw=clamp((elapsed-uGoldTransitionStartTime3D)/max(uGoldTransitionDuration3D,0.001),0.0,1.0);
+  float goldBuild=pow(smoother(goldRaw),uGoldSoftness3D);
   float depthRemaining=1.0-smoother(clamp((s-0.68)/0.23,0.0,1.0));
   float preFade=1.0-smoother(clamp((s-0.62)/0.12,0.0,1.0));
   float morph=ramp(0.68,0.91,s);
@@ -131,6 +135,7 @@ void main(){
   vBrightnessEnergy=brightnessEnergy;
   vCoreEmission=mix(uInitialCoreEmission3D,uPeakCoreEmission3D,brightnessEnergy);
   vHaloEmission=mix(uInitialHaloEmission3D,uPeakHaloEmission3D,brightnessEnergy);
+  vGoldBuild=goldBuild;
   vAlpha=activation*preFade*endFade;
   vGlow=uGlow;
 }
