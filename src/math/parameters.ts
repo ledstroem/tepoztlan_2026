@@ -10,6 +10,7 @@ export interface Params {
   goldTransitionStartTime3D?:number; goldTransitionDuration3D?:number;
   middleSoftGold3D?:number; energeticChampagne3D?:number; peakSoftGold3D?:number;
   goldSoftness3D?:number; nearDepthGoldShift3D?:number; haloGoldSoftness3D?:number;
+  nearDiamondColourInfluence3D?:number;
 }
 
 export const defaults: Params = {
@@ -22,4 +23,4 @@ export const defaults: Params = {
 export const qualityFilaments = { low:48, medium:72, high:96 };
 export const spectralSamples = { low:10, medium:20, high:28 };
 
-Object.assign(defaults,{goldTransitionStartTime3D:2.4,goldTransitionDuration3D:10.8,middleSoftGold3D:1,energeticChampagne3D:1,peakSoftGold3D:1,goldSoftness3D:.95,nearDepthGoldShift3D:.75,haloGoldSoftness3D:.22});
+Object.assign(defaults,{goldTransitionStartTime3D:1.8,goldTransitionDuration3D:11.4,middleSoftGold3D:1,energeticChampagne3D:1,peakSoftGold3D:1,goldSoftness3D:.88,nearDepthGoldShift3D:.75,haloGoldSoftness3D:.22,nearDiamondColourInfluence3D:1});
