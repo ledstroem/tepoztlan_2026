@@ -14,7 +14,7 @@ uniform float uTravellingEnergyFrequency, uTravellingEnergySpeed, uRadialBreathi
 uniform float uPreConvergenceEnergy, uConvergenceImpulse, uSettlingStrength, uFinalResidualMotion;
 uniform float uDepth, uParallax, uCoreWidth, uHaloWidth, uExposure, uBackground, uSeed;
 uniform float uSpectralSamples, uSpectralExpansionSpeed, uSpectralExpansionAcceleration, uPrimaryBandFrequency, uSecondaryBandAmount, uBandSoftness, uBandWidth;
-uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uDepthEffectStrength, uDepthIntroductionPoint, uFilamentBaseDepthSpread, uDepthPathAmplitude, uPlaneTilt, uPlaneTiltVariation, uDepthPerspectiveStrength, uNearWidthScale, uFarWidthScale, uNearBrightnessScale, uFarBrightnessScale, uDepthParallax, uDepthAtmosphericAttenuation, uConvergenceDepthCollapse, uOpeningColourSaturation, uOpeningWarmth, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uFinalBackgroundDarkness, uSoftLightOpacity, uFinalLayerSpread, uFinalSpatialVariation, uDarkGapStrength, uStaticWarpAmount, uFinalEdgeLight, uReducedIntensity;
+ uniform float uXExpansionScale, uYExpansionScale, uZExpansionScale, uDepthStretch, uVolumetricDensity, uSpectralSaturation, uSpectralVibrance, uSpectralExposure, uSpectralEmissionIntensity, uInitialSpectralBrightness, uChromaticAmbientStrength, uNeutralAmbientStrength, uDepthChromaPreservation, uDominantLayerColourPreservation, uBandCentreChromaticHighlight, uInternalRidgeIntensity, uDistantChromaticFill, uChromaticBloomStrength, uDepthAbsorption, uOverlapWhiteningThreshold, uOverlapWhiteningSoftness, uOverlapWhiteningStrength, uVioletLuminanceBoost, uBlueLuminanceBoost, uRedLuminanceBoost, uHighlightColourPreservation, uCentralWhiteStrength, uOverlapWhitening, uWaveDeformation, uEcstaticPulseStrength, uCameraDrift, uResidualDiamondVisibility, uDepthEffectStrength, uDepthIntroductionPoint, uFilamentBaseDepthSpread, uDepthPathAmplitude, uPlaneTilt, uPlaneTiltVariation, uDepthPerspectiveStrength, uNearWidthScale, uFarWidthScale, uNearBrightnessScale, uFarBrightnessScale, uDepthParallax, uDepthAtmosphericAttenuation, uConvergenceDepthCollapse, uOpeningColourSaturation, uOpeningWarmth, uBroadFieldMotion, uRadialPropagationSpeed, uDirectionalSweepSpeed, uZDepthMotion, uDensityWaveStrength, uDensityWaveSpeed, uSurfaceWarpAmount, uRainbowHoldDuration, uEnableFinalSoftLight, uSoftLightTransitionDuration, uSoftLightHoldDuration, uSoftLightBrightness, uSoftLightWarmth, uSoftLightUniformity, uPearlescentResidualAmount, uFinalBackgroundDarkness, uSoftLightOpacity, uFinalLayerSpread, uFinalSpatialVariation, uDarkGapStrength, uStaticWarpAmount, uFinalEdgeLight, uEnableFinalFadeToBlack, uFinalGlowHoldDuration, uFinalFadeToBlackDuration, uFinalBlackHoldDuration, uReducedIntensity;
 uniform float uRibbonCount, uRibbonSegments, uDiamondSpectralFadeDuration, uRibbonSourceWidth, uRibbonOuterWidth, uRibbonWidthGrowth, uRibbonLength, uRibbonGrowthDuration, uRibbonDelaySpread;
 uniform float uTrue3DStrands;
 uniform float uXDirectionSpread, uYDirectionSpread, uZDirectionSpread, uForwardRibbonProportion, uBackwardRibbonProportion, uRibbonCurvature, uSecondaryBend, uRibbonTwist, uRibbonTwistSpeed, uRibbonTranslucency, uRibbonEmission, uRibbonCentreHighlight, uRibbonEdgeHighlight, uRibbonOverlapBrightness, uRibbonDepthSoftness, uNearCameraFade, uRibbonColourVariation, uSpectrumAcrossWidth, uSpectrumAlongLength, uRibbonMotionSpeed, uResidualCentralGlow;
@@ -52,7 +52,10 @@ void main(){
   float rainbowHoldEndTime=spectralStartTime+uSpectralEmergenceDuration+uSpectralExpansionDuration+uRainbowHoldDuration;
   float softLightTransitionStartTime=rainbowHoldEndTime;
   float softLightCompleteTime=softLightTransitionStartTime+uSoftLightTransitionDuration;
-  float animationEndTime=softLightCompleteTime+uSoftLightHoldDuration;
+  float finalFadeStartTime=softLightCompleteTime+uSoftLightHoldDuration+uFinalGlowHoldDuration;
+  float finalBlackCompleteTime=finalFadeStartTime+uFinalFadeToBlackDuration;
+  float animationEndTime=finalBlackCompleteTime+uFinalBlackHoldDuration;
+  float fadeToBlack=smoother(clamp((animationTime-finalFadeStartTime)/max(uFinalFadeToBlackDuration,0.001),0.0,1.0))*uEnableFinalFadeToBlack;
   float softLightTransition=smoother(clamp((animationTime-softLightTransitionStartTime)/max(uSoftLightTransitionDuration,0.001),0.0,1.0))*uEnableFinalSoftLight;
   float rainbowVisible=(1.0-softLightTransition)*spectralGate;
   float rainbowMotionGate=rainbowVisible*(1.0-softLightTransition);
@@ -304,7 +307,8 @@ void main(){
   vec3 finalBackground=vec3(0.0015,0.0011,0.0007)*uFinalBackgroundDarkness;
   vec3 softLightLinear=finalBackground+emittedLight*(uSoftLightBrightness+uPearlescentResidualAmount*0.05)*uSoftLightOpacity;
   if(animationTime<softLightTransitionStartTime) softLightLinear=vec3(0.0);
-  linear+=softLightLinear*finalLightVisibility;
+  linear+=softLightLinear*finalLightVisibility*(1.0-fadeToBlack);
+  if(animationTime>=finalBlackCompleteTime && uEnableFinalFadeToBlack>0.5) linear=vec3(0.0);
   float toneExposure=max(uExposure,0.01);
   vec3 channelMapped=linear*toneExposure/(1.0+linear*toneExposure*0.72);
   float peak=max(max(linear.r,linear.g),linear.b);
