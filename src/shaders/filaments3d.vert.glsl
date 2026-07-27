@@ -10,6 +10,9 @@ uniform float uInitialLines, uPeakLines, uRevealSoftness, uOmega0, uOmega1, uSpe
 uniform float uBaseImperfection, uDifferentialRotation, uBrightnessLandmarkStrength;
 uniform float uDepthIntroductionTime, uMaxPlaneTilt, uPlaneTiltVariation3D, uBaseDepthSpread3D, uOrbitZAmplitude, uSecondaryZAmplitude, uPerspectiveStrength3D;
 uniform float uNearWidthScale3D, uFarWidthScale3D, uNearBrightnessScale3D, uFarBrightnessScale3D, uDepthAttenuation3D, uCoreOpacity3D;
+uniform float uInitialStripWidth3D, uEnergeticStripWidth3D, uInitialGlowScale3D, uEnergeticGlowScale3D;
+uniform float uInitialCoreEmission3D, uPeakCoreEmission3D, uInitialHaloEmission3D, uPeakHaloEmission3D;
+uniform float uBrightnessRiseStartTime3D, uBrightnessRiseDuration3D, uBrightnessExponent3D;
 uniform float uEnableDepartures, uDepartureEarliestTime, uDepartureLatestTime, uDepartureDuration, uDepartingStrandProportion, uStrongDepartureProportion;
 uniform float uTangentContinuationStrength, uDepartureLength, uHorizontalBend, uVerticalBend, uZBend, uEndTaper, uSideContainment3D, uDepartureCollapseTiming;
 uniform float uGlow;
@@ -17,6 +20,9 @@ uniform float uGlow;
 out float vActive;
 out float vDepth01;
 out float vBrightness;
+out float vBrightnessEnergy;
+out float vCoreEmission;
+out float vHaloEmission;
 out float vAlpha;
 out float vGlow;
 
@@ -51,6 +57,9 @@ void main(){
   float elapsed=clamp(uProgress,0.0,1.0)*uDuration;
   float s=clamp(elapsed/max(uDiamondCompleteTime,0.001),0.0,1.0);
   float depthBuild=smoother(clamp((elapsed-uDepthIntroductionTime)/5.0,0.0,1.0));
+  float brightnessRaw=clamp((elapsed-uBrightnessRiseStartTime3D)/max(uBrightnessRiseDuration3D,0.001),0.0,1.0);
+  float brightnessBuild=smoother(brightnessRaw);
+  float brightnessEnergy=pow(brightnessBuild,max(uBrightnessExponent3D,0.1));
   float depthRemaining=1.0-smoother(clamp((s-0.68)/0.23,0.0,1.0));
   float preFade=1.0-smoother(clamp((s-0.62)/0.12,0.0,1.0));
   float morph=ramp(0.68,0.91,s);
@@ -109,8 +118,9 @@ void main(){
   float brightness=mix(uFarBrightnessScale3D,uNearBrightnessScale3D,depth01);
   vec3 tangent2=normalize(pNext-pPrev);
   vec3 widthDirection=normalize(vec3(-tangent2.y,tangent2.x,0.0));
-  float glowWidth=mix(1.0,2.8,uGlow);
-  world+=widthDirection*aSide*0.0060*width*glowWidth;
+  float stripWidth=mix(uInitialStripWidth3D,uEnergeticStripWidth3D,brightnessEnergy);
+  float glowWidth=mix(uInitialGlowScale3D,uEnergeticGlowScale3D,brightnessEnergy);
+  world+=widthDirection*aSide*stripWidth*width*mix(1.0,glowWidth,uGlow);
   float aspect=uResolution.x/uResolution.y;
   float perspective=1.0/max(1.0-world.z*uPerspectiveStrength3D,0.62);
   vec2 projected=world.xy*perspective/vec2(aspect,1.0);
@@ -118,6 +128,9 @@ void main(){
   vActive=activation;
   vDepth01=depth01;
   vBrightness=brightness;
+  vBrightnessEnergy=brightnessEnergy;
+  vCoreEmission=mix(uInitialCoreEmission3D,uPeakCoreEmission3D,brightnessEnergy);
+  vHaloEmission=mix(uInitialHaloEmission3D,uPeakHaloEmission3D,brightnessEnergy);
   vAlpha=activation*preFade*endFade;
   vGlow=uGlow;
 }
