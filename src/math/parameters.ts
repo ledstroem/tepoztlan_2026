@@ -23,4 +23,4 @@ export const defaults: Params = {
 export const qualityFilaments = { low:48, medium:72, high:96 };
 export const spectralSamples = { low:10, medium:20, high:28 };
 
-Object.assign(defaults,{goldTransitionStartTime3D:1.8,goldTransitionDuration3D:11.4,middleSoftGold3D:1,energeticChampagne3D:1,peakSoftGold3D:1,goldSoftness3D:.88,nearDepthGoldShift3D:.75,haloGoldSoftness3D:.22,nearDiamondColourInfluence3D:1});
+Object.assign(defaults,{goldTransitionStartTime3D:.20,goldTransitionDuration3D:.86,middleSoftGold3D:1,energeticChampagne3D:1,peakSoftGold3D:1,goldSoftness3D:.88,nearDepthGoldShift3D:.75,haloGoldSoftness3D:.22,nearDiamondColourInfluence3D:1});

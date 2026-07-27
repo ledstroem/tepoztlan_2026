@@ -62,7 +62,7 @@ void main(){
   float brightnessRaw=clamp((elapsed-uBrightnessRiseStartTime3D)/max(uBrightnessRiseDuration3D,0.001),0.0,1.0);
   float brightnessBuild=smoother(brightnessRaw);
   float brightnessEnergy=pow(brightnessBuild,max(uBrightnessExponent3D,0.1));
-  float goldRaw=clamp((elapsed-uGoldTransitionStartTime3D)/max(uGoldTransitionDuration3D,0.001),0.0,1.0);
+  float goldRaw=clamp((s-uGoldTransitionStartTime3D)/max(uGoldTransitionDuration3D-uGoldTransitionStartTime3D,0.001),0.0,1.0);
   float goldBuild=pow(smoother(goldRaw),uGoldSoftness3D);
   float depthRemaining=1.0-smoother(clamp((s-0.68)/0.23,0.0,1.0));
   float preFade=1.0-smoother(clamp((s-0.62)/0.12,0.0,1.0));
