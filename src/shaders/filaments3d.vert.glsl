@@ -58,7 +58,7 @@ vec3 ringPosition(float angle,vec3 centre,vec3 U,vec3 V,float radius,float phase
 void main(){
   float elapsed=clamp(uProgress,0.0,1.0)*uDuration;
   float s=clamp(elapsed/max(uDiamondCompleteTime,0.001),0.0,1.0);
-  float depthBuild=smoother(clamp((elapsed-uDepthIntroductionTime)/5.0,0.0,1.0));
+  float depthBuild=smoother(clamp((elapsed-uDepthIntroductionTime)/4.8,0.0,1.0));
   float brightnessRaw=clamp((elapsed-uBrightnessRiseStartTime3D)/max(uBrightnessRiseDuration3D,0.001),0.0,1.0);
   float brightnessBuild=smoother(brightnessRaw);
   float brightnessEnergy=pow(brightnessBuild,max(uBrightnessExponent3D,0.1));
@@ -76,15 +76,21 @@ void main(){
   float n=(fi+0.5)/max(uFilaments,1.0);
   float side=mod(fi,2.0)*2.0-1.0;
   float rnd=hash(fi+12.7), rnd2=hash(fi*2.71+15.9), rnd3=hash(fi*4.13+7.1);
-  float activation=smoothstep(hash(fi*1.73+4.7)-uRevealSoftness,hash(fi*1.73+4.7)+uRevealSoftness,activeFraction);
+  float strandIndex=floor(fi*0.5);
+  float laterStrand=step(2.0,strandIndex);
+  float strandStart=1.5+clamp((strandIndex-2.0)/max(uPeakLines-2.0,1.0),0.0,1.0)*2.0;
+  float strandIntroduction=smoother(clamp((elapsed-strandStart)/2.0,0.0,1.0));
+  float calmIntroduction=mix(0.34,1.0,smoother(clamp(elapsed/0.8,0.0,1.0)));
+  float budgetActivation=smoothstep(hash(fi*1.73+4.7)-uRevealSoftness,hash(fi*1.73+4.7)+uRevealSoftness,activeFraction);
+  float activation=mix(calmIntroduction,budgetActivation*strandIntroduction,laterStrand);
   float direction=side<0.0?1.0:mix(1.0,-1.0,uCounterRotation);
   float rate=side<0.0?1.0:uSpeedRatio;
   float zIdentity=n*2.0-1.0;
   float differential=1.0+uDifferentialRotation*(zIdentity+0.45*(rnd-0.5));
   float phase=rotationIntegral(elapsed)*TAU*rate*direction*differential;
   float tiltX=(rnd-0.5)*2.0*uMaxPlaneTilt*depthBuild*depthRemaining;
-  float tiltY=(rnd2-0.5)*2.0*uMaxPlaneTilt*0.72*depthBuild*depthRemaining;
-  float roll=(rnd3-0.5)*2.0*0.18*depthBuild*depthRemaining;
+  float tiltY=(rnd2-0.5)*2.0*uMaxPlaneTilt*0.82*depthBuild*depthRemaining;
+  float roll=(rnd3-0.5)*2.0*0.262*depthBuild*depthRemaining;
   mat3 plane=rz(roll)*ry(tiltY)*rx(tiltX);
   vec3 U=plane*vec3(1.0,0.0,0.0);
   vec3 V=plane*vec3(0.0,1.0,0.0);
@@ -106,8 +112,8 @@ void main(){
   vec3 tangent=normalize(pNext-pPrev);
   vec3 C1=p0+tangent*uTangentContinuationStrength;
   vec3 outward=vec3(side,0.16*(rnd-0.5),0.0);
-  vec3 C2=C1+outward*uHorizontalBend+vec3(0.0,(rnd2-0.5)*uVerticalBend,uZBend*(rnd3-0.5));
-  vec3 P1=C2+vec3(side*uDepartureLength, (rnd-0.5)*uVerticalBend*0.8, (rnd2-0.5)*uZBend);
+  vec3 C2=C1+outward*uHorizontalBend+vec3(0.0,(rnd2-0.5)*uVerticalBend,uZBend*(rnd3-0.5)*1.35);
+  vec3 P1=C2+vec3(side*uDepartureLength, (rnd-0.5)*uVerticalBend*0.8, (rnd2-0.5)*uZBend*1.35);
   float oneMinus=1.0-forward;
   vec3 departurePoint=oneMinus*oneMinus*oneMinus*p0+3.0*oneMinus*oneMinus*forward*C1+3.0*oneMinus*forward*forward*C2+forward*forward*forward*P1;
   float departureBlend=departure*departureAmount*section;

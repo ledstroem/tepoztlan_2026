@@ -11,6 +11,7 @@ export interface Params {
   middleSoftGold3D?:number; energeticChampagne3D?:number; peakSoftGold3D?:number;
   goldSoftness3D?:number; nearDepthGoldShift3D?:number; haloGoldSoftness3D?:number;
   nearDiamondColourInfluence3D?:number;
+  maxPlaneTiltX3D?:number; maxPlaneTiltY3D?:number; strandIntroductionStartTime3D?:number; strandIntroductionDuration3D?:number;
 }
 
 export const defaults: Params = {
@@ -23,4 +24,4 @@ export const defaults: Params = {
 export const qualityFilaments = { low:48, medium:72, high:96 };
 export const spectralSamples = { low:10, medium:20, high:28 };
 
-Object.assign(defaults,{goldTransitionStartTime3D:.20,goldTransitionDuration3D:.86,middleSoftGold3D:1,energeticChampagne3D:1,peakSoftGold3D:1,goldSoftness3D:.88,nearDepthGoldShift3D:.75,haloGoldSoftness3D:.22,nearDiamondColourInfluence3D:1});
+Object.assign(defaults,{goldTransitionStartTime3D:.20,goldTransitionDuration3D:.86,middleSoftGold3D:1,energeticChampagne3D:1,peakSoftGold3D:1,goldSoftness3D:.84,nearDepthGoldShift3D:.75,haloGoldSoftness3D:.22,nearDiamondColourInfluence3D:1,maxPlaneTiltX3D:.61,maxPlaneTiltY3D:.49,strandIntroductionStartTime3D:1.5,strandIntroductionDuration3D:3.5,initialLines:2,initialStripWidth3D:.0022,initialGlowScale3D:1.18,depthIntroductionTime:1.4,maxPlaneTilt:.60,orbitZAmplitude:.50,secondaryZAmplitude:.10,perspectiveStrength3D:.48,nearWidthScale3D:1.82,farWidthScale3D:.50,nearBrightnessScale3D:1.68,farBrightnessScale3D:.48,zBend:.40});
